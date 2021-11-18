@@ -4,21 +4,25 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import os
+
+if os.environ.get("DEBUG", "false").lower() == "true":
+    import pydevd_pycharm
+
+    pydevd_pycharm.settrace('localhost', port=7200, stdoutToServer=True, stderrToServer=True)
 
 import argparse
 import copy
-import os
-import random
-from collections import OrderedDict
-from typing import Optional, Union, Dict, Any
-
-import quaternion
 import numba
 import numpy as np
+import quaternion
+import random
 import torch
+from collections import OrderedDict
 from gym.spaces import Box
 from gym.spaces import Dict as SpaceDict
 from gym.spaces import Discrete
+from typing import Optional, Union, Dict, Any
 
 import habitat
 import habitat_sim
@@ -29,8 +33,8 @@ from habitat.tasks.nav.nav import (
     PointGoalSensor, IntegratedPointGoalGPSAndCompassSensor,
     EpisodicGPSSensor, EpisodicCompassSensor, StopAction
 )
-from habitat.tasks.nav.shortest_path_follower import ShortestPathFollower
 from habitat.tasks.nav.object_nav_task import ObjectGoalSensor
+from habitat.tasks.nav.shortest_path_follower import ShortestPathFollower
 from habitat.tasks.utils import cartesian_to_polar
 from habitat_baselines.common.baseline_registry import baseline_registry
 from habitat_baselines.common.obs_transformers import (
@@ -40,13 +44,11 @@ from habitat_baselines.common.obs_transformers import (
 )
 from habitat_baselines.config.default import get_config
 from habitat_baselines.utils.common import batch_obs
-
 from odometry.config.default import get_config as get_vo_config
 from odometry.dataset import make_transforms
 from odometry.models import make_model
 from odometry.utils import transform_batch
 from odometry.utils.utils import polar_to_cartesian
-
 
 ROTATION_ACTIONS = {
     # 0   STOP
@@ -166,8 +168,10 @@ class PointgoalEstimator:
             })
             if self.depth_discretization_on:
                 batch.update({
-                    'source_depth_discretized': torch.cat([batch['source_depth_discretized'], batch['target_depth_discretized']], 0),
-                    'target_depth_discretized': torch.cat([batch['target_depth_discretized'], batch['source_depth_discretized']], 0)
+                    'source_depth_discretized': torch.cat(
+                        [batch['source_depth_discretized'], batch['target_depth_discretized']], 0),
+                    'target_depth_discretized': torch.cat(
+                        [batch['target_depth_discretized'], batch['source_depth_discretized']], 0)
                 })
             if self.action_embedding_on:
                 batch_action = batch['action']
@@ -221,7 +225,7 @@ class PPOAgent(Agent):
             #  Filter only actor_critic weights
             self.actor_critic.load_state_dict(
                 {
-                    k[len("actor_critic.") :]: v
+                    k[len("actor_critic."):]: v
                     for k, v in ckpt["state_dict"].items()
                     if "actor_critic" in k
                 }
@@ -421,12 +425,14 @@ def main():
 
     elif args.agent_type == PPOAgentV2.__name__:
         vo_config = get_vo_config(args.vo_config_path, new_keys_allowed=True)
-        # device = torch.device('cuda', args.pth_gpu_id)
-        device = torch.device("cpu")
+        device = torch.device("cuda", args.pth_gpu_id) if torch.cuda.is_available() else torch.device("cpu")
+        # device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        print(device)
 
         obs_transforms = make_transforms(vo_config.val.dataset.transforms)
         vo_model = make_model(vo_config.model).to(device)
         checkpoint = torch.load(args.vo_checkpoint_path, map_location=device)
+        print("Agent checkpoint loaded.")
         # if config.distrib_backend:
         new_checkpoint = OrderedDict()
         for k, v in checkpoint.items():
@@ -456,7 +462,7 @@ def main():
         )
 
     else:
-        raise ValueError(f'{args.agent_type} agent type doesn\'t exist!' )
+        raise ValueError(f'{args.agent_type} agent type doesn\'t exist!')
 
     challenge.submit(agent)
 

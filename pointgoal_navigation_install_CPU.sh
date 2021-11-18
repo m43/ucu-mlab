@@ -7,40 +7,16 @@ set -o xtrace
 PWD_START=`pwd`
 
 module purge
-module load gcc/8.4.0-cuda
+module load gcc/8.4.0
 module load python/3.7.7
-module load cuda/10.1
 module load cmake
-# module load NCCL/2.4.8-1-cuda.10.0
 
-rm -rf ./venv
-python3 -m venv ./venv
-source ./venv/bin/activate
+rm -rf ./venv_cpu
+python3 -m venv ./venv_cpu
+source ./venv_cpu/bin/activate
 pip install --upgrade pip
 
 cd ..
-
-#CMAKE_INSTALL_PREFIX="$HOME"/cmake_3.14
-#mkdir -p "$CMAKE_INSTALL_PREFIX"
-#wget https://cmake.org/files/v3.14/cmake-3.14.7-Linux-x86_64.sh
-#bash cmake-3.14.7-Linux-x86_64.sh --skip-license --prefix="$CMAKE_INSTALL_PREFIX"
-#rm cmake-3.14.7-Linux-x86_64.sh
-#PATH_BKP="$PATH"
-#export PATH="$CMAKE_INSTALL_PREFIX/bin:$PATH"
-#cmake --version
-
-#GCC_7_3_0_INSTALL_PREFIX="$HOME/gcc-7.3.0"
-#mkdir -p "$GCC_7_3_0_INSTALL_PREFIX"
-#wget https://ftp.gwdg.de/pub/misc/gcc/releases/gcc-7.3.0/gcc-7.3.0.tar.gz
-#tar xf gcc-7.3.0.tar.gz
-#rm gcc-7.3.0.tar.gz
-#cd gcc-7.3.0
-#./configure --disable-multilib -prefix="$GCC_7_3_0_INSTALL_PREFIX"
-#make -jCORES $N_CORES
-#make install
-#PATH_BKP="$PATH"
-#export PATH="$GCC_7_3_0_INSTALL_PREFIX/bin:$PATH"
-#gcc --version
 
 # ----------------------------------------------------------------------------
 # install habitat-sim
@@ -57,10 +33,8 @@ pip install -r requirements.txt
 
 module purge
 module load gcc/8.4.0
-module load cuda/10.1
-#module load cudnn/7.4
 module load cmake
-python setup.py install --headless --with-cuda --prefix="$VIRTUAL_ENV"
+python setup.py install --headless --prefix="$VIRTUAL_ENV"
 
 # silence habitat-sim logs
 export GLOG_minloglevel=2
