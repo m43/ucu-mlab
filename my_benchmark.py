@@ -1,19 +1,20 @@
+import os
 from collections import defaultdict
+from typing import Dict, Optional, List
 
 import imageio
 import numpy as np
-import os
+import torch
 import tqdm
+from matplotlib import pyplot as plt
+from matplotlib.colors import Normalize
+
 from habitat.config.default import get_config
 from habitat.core.agent import Agent
 from habitat.core.env import Env
 from habitat.core.logging import logger
 from habitat.tasks.nav.nav import TopDownMap
 from habitat.utils.visualizations import maps
-from matplotlib import pyplot as plt
-from matplotlib.colors import Normalize
-from typing import Dict, Optional, List
-
 from util import ensure_dir, get_str_formatted_time
 
 
@@ -93,7 +94,6 @@ class MyBenchmark:
             if log_video_for_episode:
                 top_down_map_measure.reset_metric(self._env.current_episode, self._env.task)
 
-
             logger.info("Agent stepping around inside environment.")
             images = []
             while not self._env.episode_over:
@@ -101,8 +101,17 @@ class MyBenchmark:
                 observations = self._env.step(action)
 
                 if log_video_for_episode:
-                    rgb = observations["rgb"].cpu().numpy().astype(np.uint8)
-                    depth = observations["depth"].cpu().numpy().squeeze(axis=-1)
+                    rgb = observations["rgb"]
+                    if type(rgb) == torch.Tensor:
+                        rgb = rgb.cpu().numpy().astype(np.uint8)
+                    else:
+                        rgb = rgb.astype(np.uint8)
+
+                    depth = observations["depth"]
+                    if type(depth) == torch.Tensor:
+                        depth = depth.cpu().numpy().squeeze(axis=-1)
+                    else:
+                        depth = depth.squeeze(axis=-1)
                     # depth = (depth * 255 / 10)
                     depth = normalizer(depth)
                     depth = viridis_cmap(depth, alpha=None, bytes=True)[:, :, :3]  # exclude 'a' from 'rgba'

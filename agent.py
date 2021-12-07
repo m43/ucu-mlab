@@ -130,10 +130,22 @@ class PointgoalEstimator:
 
         if self.vertical_flip_on:
             vflip_visual_obs = {
-                'source_rgb': torch.fliplr(self.prev_observations['rgb']),
-                'target_rgb': torch.fliplr(observations['rgb']),
-                'source_depth': torch.fliplr(self.prev_observations['depth']),
-                'target_depth': torch.fliplr(observations['depth'])
+                'source_rgb':
+                    np.fliplr(self.prev_observations['rgb']).copy()
+                    if type(self.prev_observations['rgb']) != torch.Tensor
+                    else torch.fliplr(self.prev_observations['rgb']),
+                'target_rgb':
+                    np.fliplr(observations['rgb']).copy()
+                    if type(observations['rgb']) != torch.Tensor
+                    else torch.fliplr(observations['rgb']),
+                'source_depth':
+                    np.fliplr(self.prev_observations['depth']).copy()
+                    if type(self.prev_observations['depth']) != torch.Tensor
+                    else torch.fliplr(self.prev_observations['depth']),
+                'target_depth':
+                    np.fliplr(observations['depth']).copy()
+                    if type(observations['depth']) != torch.Tensor
+                    else torch.fliplr(observations['depth'])
             }
             vflip_action = INVERSE_ACTION[action] if action in ROTATION_ACTIONS else action
             vflip_egomotion_estimates = self._compute_egomotion(vflip_visual_obs, vflip_action)
@@ -384,6 +396,7 @@ class ShortestPathFollowerAgent(Agent):
 
     def reset(self) -> None:
         pass
+
 
 def main():
     _ = GaussianNoiseModelTorch()
