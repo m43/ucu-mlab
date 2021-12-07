@@ -6,10 +6,13 @@
 
 import os
 
+from habitat_extensions.sensors.noise_models.gaussian_noise_model_torch import GaussianNoiseModelTorch
+from my_benchmark import MyChallenge
+
 if os.environ.get("DEBUG", "false").lower() == "true":
     import pydevd_pycharm
 
-    pydevd_pycharm.settrace('localhost', port=7200, stdoutToServer=True, stderrToServer=True)
+    pydevd_pycharm.settrace('localhost', port=7201, stdoutToServer=True, stderrToServer=True)
 
 import argparse
 import copy
@@ -127,10 +130,10 @@ class PointgoalEstimator:
 
         if self.vertical_flip_on:
             vflip_visual_obs = {
-                'source_rgb': np.fliplr(self.prev_observations['rgb']).copy(),
-                'target_rgb': np.fliplr(observations['rgb']).copy(),
-                'source_depth': np.fliplr(self.prev_observations['depth']).copy(),
-                'target_depth': np.fliplr(observations['depth']).copy()
+                'source_rgb': torch.fliplr(self.prev_observations['rgb']),
+                'target_rgb': torch.fliplr(observations['rgb']),
+                'source_depth': torch.fliplr(self.prev_observations['depth']),
+                'target_depth': torch.fliplr(observations['depth'])
             }
             vflip_action = INVERSE_ACTION[action] if action in ROTATION_ACTIONS else action
             vflip_egomotion_estimates = self._compute_egomotion(vflip_visual_obs, vflip_action)
@@ -382,8 +385,8 @@ class ShortestPathFollowerAgent(Agent):
     def reset(self) -> None:
         pass
 
-
 def main():
+    _ = GaussianNoiseModelTorch()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--agent-type",
@@ -415,7 +418,7 @@ def main():
     config.freeze()
 
     if args.evaluation == "local":
-        challenge = habitat.Challenge(eval_remote=False)
+        challenge = MyChallenge(eval_remote=False)
         challenge._env.seed(config.RANDOM_SEED)
     else:
         challenge = habitat.Challenge(eval_remote=True)

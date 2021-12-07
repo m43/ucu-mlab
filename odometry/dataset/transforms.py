@@ -60,7 +60,7 @@ class ConvertToTensor:
     def __call__(self, data):
         data = {
             k: (
-                torch.from_numpy(np.asarray(v, dtype=np.float32))
+                v # torch.tensor(v) # torch.from_numpy(np.asarray(v, dtype=np.float32))
                 if 'rgb' in k
                 else v
             )
@@ -69,7 +69,7 @@ class ConvertToTensor:
 
         data = {
             k: (
-                torch.from_numpy(np.asarray(v, dtype=np.float32))
+                v # torch.tensor(v) # torch.from_numpy(np.asarray(v, dtype=np.float32))
                 if 'depth' in k
                 else v
             )
@@ -79,8 +79,8 @@ class ConvertToTensor:
         data = {
             k: (
                 {
-                    'position': torch.from_numpy(np.asarray(v['position'], dtype=np.float32)),
-                    'rotation': torch.from_numpy(np.asarray(v['rotation'], dtype=np.float32)),
+                    'position': v['position'], # torch.tensor(v['position']), # torch.from_numpy(np.asarray(v['position'], dtype=np.float32)),
+                    'rotation': v['position'], # torch.tensor(v['position']), # torch.from_numpy(np.asarray(v['rotation'], dtype=np.float32)),
                 }
                 if 'state' in k
                 else v
