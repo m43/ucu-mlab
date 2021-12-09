@@ -6,15 +6,16 @@
 
 import os
 
+from corruptions.parser import get_corruptions_parser, apply_corruptions_to_config
 from habitat_extensions.sensors.noise_models.gaussian_noise_model_torch import GaussianNoiseModelTorch
 from my_benchmark import MyChallenge
+from utils.util import get_runid_and_logfolder
 
 if os.environ.get("DEBUG", "false").lower() == "true":
     import pydevd_pycharm
 
     pydevd_pycharm.settrace('localhost', port=7201, stdoutToServer=True, stderrToServer=True)
 
-import argparse
 import copy
 import numba
 import numpy as np
@@ -45,7 +46,8 @@ from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_obs_space,
     get_active_obs_transforms,
 )
-from habitat_baselines.config.default import get_config
+from habitat_baselines.config.default import get_config as get_baseline_config
+from habitat import get_config
 from habitat_baselines.utils.common import batch_obs
 from odometry.config.default import get_config as get_vo_config
 from odometry.dataset import make_transforms
@@ -400,7 +402,7 @@ class ShortestPathFollowerAgent(Agent):
 
 def main():
     _ = GaussianNoiseModelTorch()
-    parser = argparse.ArgumentParser()
+    parser = get_corruptions_parser()
     parser.add_argument(
         "--agent-type",
         type=str,
@@ -416,28 +418,33 @@ def main():
     parser.add_argument("--rotation-regularization-on", action='store_true')
     parser.add_argument("--vertical-flip-on", action='store_true')
     parser.add_argument("--pth-gpu-id", type=int, default=0)
-    parser.add_argument("--seed", type=int, default=1)
     args = parser.parse_args()
 
-    config_paths = os.environ["CHALLENGE_CONFIG_FILE"]
-    config = get_config(
-        args.ddppo_config_path, ["BASE_TASK_CONFIG_PATH", config_paths]
-    ).clone()
-    config.defrost()
-    config.RANDOM_SEED = args.seed
-    config.PTH_GPU_ID = args.pth_gpu_id
-    config.INPUT_TYPE = args.input_type
-    config.MODEL_PATH = args.ddppo_checkpoint_path
-    config.freeze()
+    if args.challenge_config_file:
+        config_paths = args.challenge_config_file
+    else:
+        config_paths = os.environ["CHALLENGE_CONFIG_FILE"]
+    ddppo_config = get_baseline_config(args.ddppo_config_path).clone()
+    task_config = get_config(config_paths)
+
+    apply_corruptions_to_config(args, task_config)
+    ddppo_config.defrost()
+    ddppo_config.TASK_CONFIG = task_config
+    ddppo_config.PTH_GPU_ID = args.pth_gpu_id
+    ddppo_config.INPUT_TYPE = args.input_type
+    ddppo_config.MODEL_PATH = args.ddppo_checkpoint_path
+    ddppo_config.RANDOM_SEED = task_config.RANDOM_SEED
+    ddppo_config.freeze()
+
+    run_id, log_folder = get_runid_and_logfolder(args, task_config)
 
     if args.evaluation == "local":
-        challenge = MyChallenge(eval_remote=False)
-        challenge._env.seed(config.RANDOM_SEED)
+        challenge = MyChallenge(task_config, log_folder, eval_remote=False, **args.__dict__)
     else:
         challenge = habitat.Challenge(eval_remote=True)
 
     if args.agent_type == PPOAgent.__name__:
-        agent = PPOAgent(config)
+        agent = PPOAgent(ddppo_config)
 
     elif args.agent_type == PPOAgentV2.__name__:
         vo_config = get_vo_config(args.vo_config_path, new_keys_allowed=True)
@@ -467,20 +474,20 @@ def main():
             vertical_flip_on=args.vertical_flip_on,
             device=device
         )
-        agent = PPOAgentV2(config, pointgoal_estimator)
+        agent = PPOAgentV2(ddppo_config, pointgoal_estimator)
 
     elif args.agent_type == ShortestPathFollowerAgent.__name__:
         assert args.evaluation == "local", "ShortestPathFollowerAgent supports only local evaluation"
 
         agent = ShortestPathFollowerAgent(
             env=challenge._env,
-            goal_radius=config.TASK_CONFIG.TASK.SUCCESS.SUCCESS_DISTANCE
+            goal_radius=task_config.TASK.SUCCESS.SUCCESS_DISTANCE
         )
 
     else:
         raise ValueError(f'{args.agent_type} agent type doesn\'t exist!')
 
-    challenge.submit(agent)
+    challenge.submit(agent, args.num_episodes)
 
 
 if __name__ == "__main__":

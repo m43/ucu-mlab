@@ -1,9 +1,12 @@
-import numpy as np
 import os
 import pathlib
+import pprint
 import random
-import torch
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
+import torch
 
 horse = """               .,,.
              ,;;*;;;;,
@@ -32,7 +35,7 @@ class Object(object):
 
 
 def get_str_formatted_time() -> str:
-    return datetime.now().strftime('%Y.%m.%d_%H.%M.%S')
+    return datetime.now().strftime('%Y.%m.%d_%H.%M.%S.%f')
 
 
 def ensure_dir(dirname):
@@ -61,7 +64,7 @@ def zipdir(path, ziph):
     """
     for root, dirs, files in os.walk(path):
         for file in files:
-            ziph.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(path, '..')))
+            ziph.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), os.path.join(path, '../..')))
 
 
 class MetricTracker:
@@ -117,3 +120,46 @@ def setup_torch_device(print_logs=True):
         print("Using device", device)
 
     return device
+
+
+def get_runid_and_logfolder(args, task_config):
+    active_corruptions_1 = f"pc={args.pyrobot_controller_spec}" \
+                           f"_pr={args.pyrobot_robot_spec}" \
+                           f"_pnm={args.pyrobot_noise_multiplier}" \
+                           f"__habitatrgbnoise={args.habitat_rgb_noise_intensity}"
+
+    active_corruptions_2 = "_"
+    if args.visual_corruption and args.visual_severity != 0:
+        active_corruptions_2 += f"_{args.visual_corruption}={args.visual_severity}"
+    if args.color_jitter:
+        active_corruptions_2 += "+colorjitter"
+    if args.random_crop:
+        active_corruptions_2 += f"+radnomcrop={args.crop_width}x{args.crop_height}"
+    if args.random_shift:
+        active_corruptions_2 += f"+randomshift"
+    if args.habitat_rgb_hfov != 70:
+        active_corruptions_2 += f"+hfov={args.habitat_rgb_hfov}"
+
+    runid = f"{get_str_formatted_time()}" \
+            f"__{args.agent_name}" \
+            f"__{task_config.DATASET.SPLIT}" \
+            f"_{active_corruptions_2}" \
+            f"__{active_corruptions_1}"
+
+    logfolder = os.path.join(task_config.LOG_FOLDER, args.agent_name)
+    logfolder = os.path.join(logfolder, active_corruptions_2)
+    logfolder = os.path.join(logfolder, runid)
+    ensure_dir(logfolder)
+
+    with open(os.path.join(logfolder, "args.txt"), "w") as f:
+        pprint.pprint(args.__dict__, stream=f)
+    with open(os.path.join(logfolder, "config.txt"), "w") as f:
+        f.write(f"{task_config}")
+    with open(os.path.join(logfolder, "args_and_config.txt"), "w") as f:
+        pprint.pprint(args.__dict__, stream=f)
+        f.write(";;;\n")
+        f.write(f"{task_config}")
+
+    print(f"runid:\n{runid}")
+    print(f"logfolder:\n{os.path.abspath(logfolder)}")
+    return runid, logfolder

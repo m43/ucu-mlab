@@ -8,40 +8,86 @@ import torch
 import tqdm
 from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize
+from torchvision import transforms
 
-from habitat.config.default import get_config
+from corruptions import rgb_sensor_degradations
 from habitat.core.agent import Agent
 from habitat.core.env import Env
 from habitat.core.logging import logger
 from habitat.tasks.nav.nav import TopDownMap
 from habitat.utils.visualizations import maps
-from util import ensure_dir, get_str_formatted_time
 
 
 class MyBenchmark:
     r"""Benchmark for evaluating agents in environments."""
 
     def __init__(
-            self, config_paths: Optional[str] = None, eval_remote: bool = False
+            self, task_config, log_folder, eval_remote: bool = False, **kwargs
     ) -> None:
-        r"""..
-
-        :param config_paths: file to be used for creating the environment
-        :param eval_remote: boolean indicating whether evaluation should be run remotely or locally
-        """
-        config_env = get_config(config_paths)
-        print(config_env)
+        print(task_config)
         self._eval_remote = eval_remote
 
         if self._eval_remote is True:
             self._env = None
         else:
-            self._env = Env(config=config_env)
+            self._env = Env(config=task_config)
 
-        self.run_id = f"{config_env.RUN_ID}__{get_str_formatted_time()}"
-        self.log_folder = os.path.join(config_env.LOG_FOLDER, self.run_id)
-        self.video_log_interval = config_env.VIDEO_LOG_INTERVAL
-        ensure_dir(self.log_folder)
+        self.log_folder = log_folder
+        self.video_log_interval = task_config.VIDEO_LOG_INTERVAL
+
+        def f(x, k, default):
+            return x[k] if k in x else default
+
+        self._random_crop: Optional[bool] = f(kwargs, "random_crop", False)
+        self._crop_height: Optional[int] = f(kwargs, "crop_height", None)
+        self._crop_width: Optional[int] = f(kwargs, "crop_width", None)
+        self._jitter: Optional[bool] = f(kwargs, "color_jitter", False)
+        self._tshift: Optional[bool] = f(kwargs, "random_shift", False)
+        self._daug_mode: Optional[bool] = f(kwargs, "data_augmentation_mode", False)
+
+        # Parse visual corruption details
+        # Provided inputs are
+        # - a list of corruptions
+        # - a list of severties
+        visual_corruption = f(kwargs, "visual_corruption", None)
+        visual_severity = f(kwargs, "visual_severity", None)
+        if visual_corruption is not None and visual_severity > 0:  # This works
+            self._corruptions = [visual_corruption.replace("_", " ")]
+            self._severities = [visual_severity]
+        else:
+            self._corruptions = visual_corruption
+            self._severities = visual_severity
+
+        logger.info("Applied corruptions are ")
+        logger.info(self._corruptions)
+        logger.info(self._severities)
+
+        logger.info(f"Random Crop state {self._random_crop}")
+        logger.info(f"Color Jitter state {self._jitter}")
+        logger.info(f"Random Translate {self._tshift}")
+
+        # Whether to rotate the input observation or not
+        # self._sep_rotate: bool = f(kwargs, "sep_rotate", False)
+        self._rotate: bool = f(kwargs, "rotate", False)
+
+        # Data augmentation options
+        self._random_cropper = (
+            None
+            if not self._random_crop
+            else transforms.RandomCrop((self._crop_height, self._crop_width))
+        )
+
+        self._color_jitter = (
+            None if not self._jitter else transforms.ColorJitter(0.4, 0.4, 0.4, 0.4)
+        )
+
+        self._random_translate = (
+            None
+            if not self._tshift
+            else transforms.RandomAffine(degrees=0, translate=(0.2, 0.2))
+        )
+
+        self.to_pil = transforms.ToPILImage()  # assumes mode="RGB" for 3 channels
 
     def remote_evaluate(
             self, agent: "Agent", num_episodes: Optional[int] = None
@@ -91,6 +137,8 @@ class MyBenchmark:
 
             agent.reset()
             observations = self._env.reset()
+            observations["rgb"] = self.corrupt_rgb_observation(observations["rgb"])
+
             if log_video_for_episode:
                 top_down_map_measure.reset_metric(self._env.current_episode, self._env.task)
 
@@ -99,6 +147,7 @@ class MyBenchmark:
             while not self._env.episode_over:
                 action = agent.act(observations)
                 observations = self._env.step(action)
+                observations["rgb"] = self.corrupt_rgb_observation(observations["rgb"])
 
                 if log_video_for_episode:
                     rgb = observations["rgb"]
@@ -154,7 +203,7 @@ class MyBenchmark:
             images: List[np.ndarray],
             output_dir: str,
             video_name: str,
-            fps: int = 10,
+            fps: int = 5,
             quality: Optional[float] = 5,
             **kwargs,
     ):
@@ -204,13 +253,58 @@ class MyBenchmark:
         else:
             return self.local_evaluate(agent, num_episodes)
 
+    def corrupt_rgb_observation(self, frame):
+        # Work with numpy
+        if type(frame) == torch.Tensor:
+            im = frame.cpu().numpy().astype(np.uint8)
+        else:
+            im = np.array(frame)
+
+        # Apply a sequence of corruptions to the RGB frames
+        if self._corruptions is not None:
+            im = rgb_sensor_degradations.apply_corruption_sequence(
+                im, self._corruptions, self._severities
+            )
+
+        # Random translation
+        if self._tshift:
+            if isinstance(im, np.ndarray):
+                im = self.to_pil(im)
+            im = self._random_translate(im)
+
+        # Random Crop Image
+        if self._random_crop:
+            if isinstance(im, np.ndarray):
+                im = self.to_pil(im)
+            im = self._random_cropper(im)
+
+        # Color Jitter
+        if self._jitter:
+            if isinstance(im, np.ndarray):
+                im = self.to_pil(im)
+            im = self._color_jitter(im)
+
+        # if self._rotate:
+        #     rot_im = copy.deepcopy(im)
+        #
+        # if self._rotate:
+        #     if not isinstance(rot_im, np.ndarray):
+        #         rot_im = np.array(im)
+        #     rot_im, rot_label = rgb_sensor_degradations.rotate_single(rot_im)
+
+        # Return the same type
+        if type(frame) == torch.Tensor:
+            return torch.tensor(im, dtype=frame.dtype).to(frame.device)
+        else:
+            return np.array(im)
+
 
 class MyChallenge(MyBenchmark):
-    def __init__(self, eval_remote=False):
-        config_paths = os.environ["CHALLENGE_CONFIG_FILE"]
-        super().__init__(config_paths, eval_remote=eval_remote)
+    def __init__(self, task_config, log_folder, eval_remote=False, **kwargs):
+        super().__init__(task_config, log_folder, eval_remote=eval_remote, **kwargs)
+        self._env.seed(task_config.RANDOM_SEED)
 
-    def submit(self, agent):
-        metrics = super().evaluate(agent)
+    def submit(self, agent, num_episodes=None):
+        metrics = super().evaluate(agent, num_episodes=num_episodes)
         for k, v in metrics.items():
             logger.info("{}: {}".format(k, v))

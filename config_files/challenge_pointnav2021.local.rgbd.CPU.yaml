@@ -1,8 +1,8 @@
 #VIDEO_OPTION: ["disk"]
 #TENSORBOARD_DIR: "tb"
 #VIDEO_DIR: "video_dir"
-RUN_ID: "run_id"
-LOG_FOLDER: "frano"
+#RUN_ID: "run_id"
+LOG_FOLDER: "logs"
 #VIDEO_LOG_INTERVAL: 1
 #VIDEO_LOG_INTERVAL: 30
 VIDEO_LOG_INTERVAL: 9999999999
@@ -20,18 +20,19 @@ SIMULATOR:
   HABITAT_SIM_V0:
     GPU_DEVICE_ID: 0
     ALLOW_SLIDING: False
-    GPU_GPU: True
-#    GPU_GPU: False
+#    GPU_GPU: True
+    GPU_GPU: False
   RGB_SENSOR:
     WIDTH: 640
     HEIGHT: 360
     HFOV: 70
     POSITION: [0, 0.88, 0]
     ORIENTATION: [-0.3490659, 0, 0] # -20 degrees
-    NOISE_MODEL: "GaussianNoiseModelTorch"
-#    NOISE_MODEL: "GaussianNoiseModel"
+#    NOISE_MODEL: "GaussianNoiseModelTorch"
+    NOISE_MODEL: "GaussianNoiseModel"
     NOISE_MODEL_KWARGS:
       intensity_constant: 0.1
+#      intensity_constant: 0.0
 
   DEPTH_SENSOR:
     WIDTH: 640

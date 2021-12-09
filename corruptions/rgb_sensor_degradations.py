@@ -275,7 +275,8 @@ def apply_corruption_sequence(frame, corruptions, severities):
         corr = corruptions[i]
         sev = severities[i]
         image = apply_corruption(image, corr, sev)
-    return np.array(image)
+    return image
+
 
 
 def _rotate_single_with_label(x, label):
