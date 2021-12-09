@@ -7,11 +7,12 @@
 ############################
 
 # HABITAT DEFAULT
-python random_agent.py \
+python random_agent.py --evaluation local \
 --agent_name random_agent --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
+--num_episodes 2
 
 # HABITAT DEFAULT + COLOR JITTER
-python random_agent.py \
+python random_agent.py --evaluation local \
 --agent_name random_agent --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --num_episodes 2
 
