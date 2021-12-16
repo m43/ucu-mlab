@@ -10,9 +10,9 @@ module load python/3.7.7
 module load cuda/10.1
 module load cmake
 
+source ~/miniconda3/etc/profile.d/conda.sh
 conda deactivate
 conda create -n ruslan python=3.6 cmake=3.14.0 -y
-source ~/miniconda3/etc/profile.d/conda.sh
 conda activate ruslan
 
 cd ..
