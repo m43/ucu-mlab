@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 
 
-import argparse
 import os
 import random
 from typing import Dict, Optional
@@ -18,6 +17,8 @@ from gym.spaces import Dict as SpaceDict
 from gym.spaces import Discrete
 
 import habitat
+from corruptions.parser import get_corruptions_parser, apply_corruptions_to_config, get_runid_and_logfolder
+from habitat import get_config
 from habitat.config import Config
 from habitat.core.agent import Agent
 from habitat.core.simulator import Observations
@@ -27,8 +28,10 @@ from habitat_baselines.common.obs_transformers import (
     apply_obs_transforms_obs_space,
     get_active_obs_transforms,
 )
-from habitat_baselines.config.default import get_config
+from habitat_baselines.config.default import get_config as get_baseline_config
 from habitat_baselines.utils.common import batch_obs
+from habitat_extensions.sensors.noise_models import GaussianNoiseModelTorch
+from my_benchmark import MyChallenge
 
 
 @numba.njit
@@ -158,36 +161,45 @@ class PPOAgent(Agent):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    _ = GaussianNoiseModelTorch()
+    parser = get_corruptions_parser()
     parser.add_argument(
         "--input-type", default="blind", choices=["blind", "rgb", "depth", "rgbd"]
     )
     parser.add_argument(
         "--evaluation", type=str, required=True, choices=["local", "remote"]
     )
-    config_paths = os.environ["CHALLENGE_CONFIG_FILE"]
     parser.add_argument("--model-path", default="", type=str)
     args = parser.parse_args()
+    print(args)
 
-    config = get_config(
+    if args.challenge_config_file:
+        config_paths = args.challenge_config_file
+    else:
+        config_paths = os.environ["CHALLENGE_CONFIG_FILE"]
+    task_config = get_config(config_paths)
+    apply_corruptions_to_config(args, task_config)
+    args.run_id, args.log_folder = get_runid_and_logfolder(args, task_config)
+
+    ddppo_config = get_baseline_config(
         "config_files/ddppo/ddppo_pointnav_ORIGINAL.yaml", ["BASE_TASK_CONFIG_PATH", config_paths]
     ).clone()
-    config.defrost()
-    config.PTH_GPU_ID = 0
-    config.INPUT_TYPE = args.input_type
-    config.MODEL_PATH = args.model_path
+    ddppo_config.defrost()
+    ddppo_config.TASK_CONFIG = task_config
+    ddppo_config.PTH_GPU_ID = 0
+    ddppo_config.INPUT_TYPE = args.input_type
+    ddppo_config.MODEL_PATH = args.model_path
+    ddppo_config.RANDOM_SEED = task_config.RANDOM_SEED
+    ddppo_config.freeze()
 
-    config.RANDOM_SEED = 7
-    config.freeze()
+    agent = PPOAgent(ddppo_config)
 
-    agent = PPOAgent(config)
     if args.evaluation == "local":
-        challenge = habitat.Challenge(eval_remote=False)
-        challenge._env.seed(config.RANDOM_SEED)
+        challenge = MyChallenge(task_config, eval_remote=False, **args.__dict__)
     else:
         challenge = habitat.Challenge(eval_remote=True)
 
-    challenge.submit(agent)
+    challenge.submit(agent, args.num_episodes)
 
 
 if __name__ == "__main__":
