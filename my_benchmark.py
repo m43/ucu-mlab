@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 from typing import Dict, Optional, List
 
+import PIL.Image
 import imageio
 import numpy as np
 import torch
@@ -22,7 +23,7 @@ class MyBenchmark:
     r"""Benchmark for evaluating agents in environments."""
 
     def __init__(
-            self, task_config, log_folder, eval_remote: bool = False, **kwargs
+            self, task_config, log_folder, video_log_interval, eval_remote: bool = False, **kwargs
     ) -> None:
         print(task_config)
         self._eval_remote = eval_remote
@@ -33,7 +34,7 @@ class MyBenchmark:
             self._env = Env(config=task_config)
 
         self.log_folder = log_folder
-        self.video_log_interval = task_config.VIDEO_LOG_INTERVAL
+        self.video_log_interval = video_log_interval
 
         def f(x, k, default):
             return x[k] if k in x else default
@@ -292,16 +293,19 @@ class MyBenchmark:
         #         rot_im = np.array(im)
         #     rot_im, rot_label = rgb_sensor_degradations.rotate_single(rot_im)
 
+        if isinstance(im, PIL.Image.Image):
+            im = np.array(im)
+
         # Return the same type
         if type(frame) == torch.Tensor:
             return torch.tensor(im, dtype=frame.dtype).to(frame.device)
         else:
-            return np.array(im)
+            return im if isinstance(im, np.ndarray) else np.array(im)
 
 
 class MyChallenge(MyBenchmark):
-    def __init__(self, task_config, log_folder, eval_remote=False, **kwargs):
-        super().__init__(task_config, log_folder, eval_remote=eval_remote, **kwargs)
+    def __init__(self, task_config, log_folder, video_log_interval, eval_remote=False, **kwargs):
+        super().__init__(task_config, log_folder, video_log_interval, eval_remote=eval_remote, **kwargs)
         self._env.seed(task_config.RANDOM_SEED)
 
     def submit(self, agent, num_episodes=None):

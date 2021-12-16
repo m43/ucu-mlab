@@ -23,12 +23,12 @@ python random_agent.py --evaluation local \
 # HABITAT DEFAULT
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
 --agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
---num_episodes 2
+--num_episodes 3 --log_folder logs/round1 --video_log_interval 1
 # HABITAT DEFAULT
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
 --agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --habitat_rgb_noise_intensity 0.1 \
---num_episodes 2
+--num_episodes 4 --num_episode_sample 4
 
 # CLEAN
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
@@ -38,12 +38,7 @@ python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --
 
 
 ## VISUAL CORRUPTIONS
-
-# HABITAT DEFAULT + HFOV
-python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
---agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
--hfov 50 \
---num_episodes 2
+# Defocus_Blur Lighting Speckle_Noise Spatter Motion_Blur
 
 # HABITAT DEFAULT + DEFOCUS BLUR
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
@@ -69,6 +64,12 @@ python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
 --agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --visual_corruption Motion_Blur --visual_severity 5 \
+--num_episodes 2
+
+# HABITAT DEFAULT + HFOV
+python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
+--agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
+-hfov 50 \
 --num_episodes 2
 
 # HABITAT DEFAULT + RANDOM CROP
@@ -101,12 +102,12 @@ python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --
 
 # pyrobot_controller_spec in [ILQR, Proportional, Movebase]
 
-# HABITAT DEFAULT
+# HABITAT DEFAULT + pyrobot_controller=Movebase
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
 --agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --pyrobot_controller_spec "Movebase" \
 --num_episodes 2
-# HABITAT DEFAULT + pyrobot_controller=Proportional
+# HABITAT DEFAULT 
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
 --agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --pyrobot_controller_spec Proportional \

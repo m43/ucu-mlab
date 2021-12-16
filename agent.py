@@ -6,10 +6,9 @@
 
 import os
 
-from corruptions.parser import get_corruptions_parser, apply_corruptions_to_config
+from corruptions.parser import get_corruptions_parser, apply_corruptions_to_config, get_runid_and_logfolder
 from habitat_extensions.sensors.noise_models.gaussian_noise_model_torch import GaussianNoiseModelTorch
 from my_benchmark import MyChallenge
-from utils.util import get_runid_and_logfolder
 
 if os.environ.get("DEBUG", "false").lower() == "true":
     import pydevd_pycharm
@@ -419,6 +418,7 @@ def main():
     parser.add_argument("--vertical-flip-on", action='store_true')
     parser.add_argument("--pth-gpu-id", type=int, default=0)
     args = parser.parse_args()
+    print(args)
 
     if args.challenge_config_file:
         config_paths = args.challenge_config_file
@@ -426,8 +426,9 @@ def main():
         config_paths = os.environ["CHALLENGE_CONFIG_FILE"]
     ddppo_config = get_baseline_config(args.ddppo_config_path).clone()
     task_config = get_config(config_paths)
-
     apply_corruptions_to_config(args, task_config)
+    args.run_id, args.log_folder = get_runid_and_logfolder(args, task_config)
+
     ddppo_config.defrost()
     ddppo_config.TASK_CONFIG = task_config
     ddppo_config.PTH_GPU_ID = args.pth_gpu_id
@@ -436,10 +437,8 @@ def main():
     ddppo_config.RANDOM_SEED = task_config.RANDOM_SEED
     ddppo_config.freeze()
 
-    run_id, log_folder = get_runid_and_logfolder(args, task_config)
-
     if args.evaluation == "local":
-        challenge = MyChallenge(task_config, log_folder, eval_remote=False, **args.__dict__)
+        challenge = MyChallenge(task_config, eval_remote=False, **args.__dict__)
     else:
         challenge = habitat.Challenge(eval_remote=True)
 

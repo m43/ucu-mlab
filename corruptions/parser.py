@@ -1,4 +1,8 @@
 import argparse
+import os
+import pprint
+
+from utils.util import get_str_formatted_time, ensure_dir
 
 
 def get_corruptions_parser():
@@ -168,6 +172,16 @@ def get_corruptions_parser():
     )
     parser.set_defaults(random_shift=False)
 
+    # parser.add_argument(
+    #     "-irs",
+    #     "--rotate",
+    #     dest="rotate",
+    #     required=False,
+    #     action="store_true",
+    #     help="Specify if random rotations of the image should be applied",
+    # )
+    # parser.set_defaults(rotate=False)
+
     # LoCoBot, LoCoBot-Lite
     parser.add_argument(
         "-pn_robot",
@@ -223,12 +237,36 @@ def get_corruptions_parser():
         help="Agent name, used for loging",
     )
     parser.add_argument(
+        "-nes",
+        "--num_episode_sample",
+        default=-1,
+        type=int,
+        required=False,
+        help="Number of episodes to sample from all episodes. -1 for no sampling",
+    )
+    parser.add_argument(
         "-ds",
         "--dataset_split",
         default=None,
         type=str,
         required=True,
         help="Which dataset split to use (train, val, val_mini)",
+    )
+    parser.add_argument(
+        "-lf",
+        "--log_folder",
+        default="logs",
+        type=str,
+        required=False,
+        help="Where to save evaluation logs",
+    )
+    parser.add_argument(
+        "-vli",
+        "--video_log_interval",
+        default=9_999_999_999,
+        type=int,
+        required=False,
+        help="How often to log per-episode videos of agent solving the task",
     )
     return parser
 
@@ -241,4 +279,50 @@ def apply_corruptions_to_config(args, task_config):
     task_config.SIMULATOR.NOISE_MODEL.ROBOT = args.pyrobot_robot_spec
     task_config.SIMULATOR.NOISE_MODEL.CONTROLLER = args.pyrobot_controller_spec
     task_config.SIMULATOR.NOISE_MODEL.NOISE_MULTIPLIER = args.pyrobot_noise_multiplier
+    task_config.DATASET.SPLIT = args.dataset_split
+    task_config.ENVIRONMENT.ITERATOR_OPTIONS.NUM_EPISODE_SAMPLE = args.num_episode_sample
     task_config.freeze()
+
+
+def get_runid_and_logfolder(args, task_config):
+    active_corruptions_1 = f"pc={args.pyrobot_controller_spec}" \
+                           f"_pr={args.pyrobot_robot_spec}" \
+                           f"_pnm={args.pyrobot_noise_multiplier}" \
+                           f"__habitatrgbnoise={args.habitat_rgb_noise_intensity}"
+
+    active_corruptions_2 = "_"
+    if args.visual_corruption and args.visual_severity != 0:
+        active_corruptions_2 += f"_{args.visual_corruption}={args.visual_severity}"
+    if args.color_jitter:
+        active_corruptions_2 += "+colorjitter"
+    if args.random_crop:
+        active_corruptions_2 += f"+radnomcrop={args.crop_width}x{args.crop_height}"
+    if args.random_shift:
+        active_corruptions_2 += f"+randomshift"
+    if args.habitat_rgb_hfov != 70:
+        active_corruptions_2 += f"+hfov={args.habitat_rgb_hfov}"
+
+    runid = f"{get_str_formatted_time()}" \
+            f"__{args.agent_name}" \
+            f"__{task_config.DATASET.SPLIT}" \
+            f"_{active_corruptions_2}" \
+            f"__{active_corruptions_1}"
+
+    logfolder = os.path.join(args.log_folder, args.agent_name)
+    logfolder = os.path.join(logfolder, active_corruptions_2)
+    logfolder = os.path.join(logfolder, runid)
+    # logfolder = os.path.join(task_config.LOG_FOLDER, runid)
+    ensure_dir(logfolder)
+
+    with open(os.path.join(logfolder, "args.txt"), "w") as f:
+        pprint.pprint(args.__dict__, stream=f)
+    with open(os.path.join(logfolder, "config.txt"), "w") as f:
+        f.write(f"{task_config}")
+    with open(os.path.join(logfolder, "args_and_config.txt"), "w") as f:
+        pprint.pprint(args.__dict__, stream=f)
+        f.write(";;;\n")
+        f.write(f"{task_config}")
+
+    print(f"runid:\n{runid}")
+    print(f"logfolder:\n{os.path.abspath(logfolder)}")
+    return runid, logfolder
