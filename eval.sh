@@ -16,9 +16,9 @@ python random_agent.py --evaluation local \
 --agent_name random_agent --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --num_episodes 2
 
-######################
-###     RUSLAN     ###
-######################
+##############################
+###     DDPPO Baseline     ###
+##############################
 
 # CLEAN
 python -u ddppo_agents.py --input-type rgbd --evaluation local --model-path saved/ddppo_pointnav_habitat2021_challenge_baseline_v1.pth \
@@ -31,11 +31,55 @@ python -u ddppo_agents.py --input-type rgbd --evaluation local --model-path save
 --agent_name ddppo --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --num_episodes 4
 
-# HABITAT DEFAULT
+# HABITAT DEFAULT + COLOR JITTER
 python -u ddppo_agents.py --input-type rgbd --evaluation local --model-path saved/ddppo_pointnav_habitat2021_challenge_baseline_v1.pth \
 --agent_name ddppo --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --color_jitter \
 --num_episodes 2
+
+##################
+###     VO     ###
+##################
+
+## CLEAN
+#python -m challenge_2020.challenge2021_corruptions --evaluation local \
+#--agent_name vo --dataset_split val_mini --challenge_config_file configs/challenge_pointnav2021.local.rgbd.CPU.yaml \
+#--habitat_rgb_noise_intensity 0.0 --pyrobot_noise_multiplier 0.0 \
+#--num_episodes 4
+#
+## HABITAT DEFAULT
+#python -m challenge_2020.challenge2021_corruptions --evaluation local \
+#--agent_name vo --dataset_split val_mini --challenge_config_file configs/challenge_pointnav2021.local.rgbd.GPU.yaml \
+#--num_episodes 1
+#
+## HABITAT DEFAULT + COLOR JITTER
+#python -m challenge_2020.challenge2021_corruptions --evaluation local \
+#--agent_name vo --dataset_split val_mini --challenge_config_file configs/challenge_pointnav2021.local.rgbd.CPU.yaml \
+#--color_jitter \
+#--num_episodes 2
+
+# HABITAT DEFAULT
+python -m pointnav_vo.run --task-type rl --noise 1 --exp-config configs/rl/ddppo_pointnav.yaml --run-type eval --n-gpu 1 --cur-time 123 \
+--agent_name vo --dataset_split val_mini --challenge_config_file configs/challenge_pointnav2021.local.rgbd.GPU.yaml \
+--num_episodes 10 --video_log_interval 1
+
+# HABITAT DEFAULT + COLOR JITTER
+python -m pointnav_vo.run --task-type rl --noise 1 --exp-config configs/rl/ddppo_pointnav.yaml --run-type eval --n-gpu 1 --cur-time 123 \
+--agent_name vo --dataset_split val_mini --challenge_config_file configs/challenge_pointnav2021.local.rgbd.GPU.yaml \
+--color_jitter \
+--num_episodes 10 --video_log_interval 1
+
+# HABITAT DEFAULT + SPECKLE NOISE s5
+python -m pointnav_vo.run --task-type rl --noise 1 --exp-config configs/rl/ddppo_pointnav.yaml --run-type eval --n-gpu 1 --cur-time 123 \
+--agent_name vo --dataset_split train --challenge_config_file configs/challenge_pointnav2021.local.rgbd.GPU.yaml \
+--visual_corruption Speckle_Noise --visual_severity 5 \
+--num_episodes 10 --num_episode_sample 1000
+
+# HABITAT DEFAULT + DEPTH NOISE
+python -m pointnav_vo.run --task-type rl --noise 1 --exp-config configs/rl/ddppo_pointnav.yaml --run-type eval --n-gpu 1 --cur-time 123 \
+--agent_name vo --dataset_split val --challenge_config_file configs/challenge_pointnav2021.local.rgbd.GPU.yaml \
+--depth_noise_multiplier 2.0 \
+--num_episodes 10
 
 
 ######################
@@ -87,6 +131,13 @@ python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --
 --agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
 --visual_corruption Motion_Blur --visual_severity 5 \
 --num_episodes 2
+
+# HABITAT DEFAULT + DEPTH NOISE
+python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \
+--agent_name ruslan --dataset_split val_mini --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.CPU.yaml \
+--depth_noise_multiplier 2.0 \
+--num_episodes 2
+
 
 # HABITAT DEFAULT + HFOV
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on  \

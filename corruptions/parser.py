@@ -18,14 +18,23 @@ def get_corruptions_parser():
         required=False,
         help="Intensity of RGB noise introduced by habitat (in the 2021 challenge it was GaussianNoiseModel with "
              "intensity 0.1). This allows the noise to be disabled by setting the intensity to 0.0, or reinforcing "
-             "its magnitute by making the intensity higher.",
+             "its magnitude by making the intensity higher.",
+    )
+    parser.add_argument(
+        "-dnm",
+        "--depth_noise_multiplier",
+        default=1.0,
+        type=float,
+        required=False,
+        help="Depth sensor noise multiplier. This corruptions assumes that the noise model has a noise_multiplier "
+             "kwarg, as RedwoodDepthNoiseModel does.",
     )
 
     parser.add_argument(
         "-hfov",
         "--habitat_rgb_hfov",
         default=70,
-        type=float,
+        type=int,
         required=False,
         help="Habitat RGB sensor horizontal field of view (in the 2021 challenge, the default was 70)",
     )
@@ -276,6 +285,7 @@ def apply_corruptions_to_config(args, task_config):
     task_config.RANDOM_SEED = args.seed
     task_config.SIMULATOR.RGB_SENSOR.HFOV = args.habitat_rgb_hfov
     task_config.SIMULATOR.RGB_SENSOR.NOISE_MODEL_KWARGS.intensity_constant = args.habitat_rgb_noise_intensity
+    task_config.SIMULATOR.DEPTH_SENSOR.NOISE_MODEL_KWARGS.noise_multiplier = args.depth_noise_multiplier
     task_config.SIMULATOR.NOISE_MODEL.ROBOT = args.pyrobot_robot_spec
     task_config.SIMULATOR.NOISE_MODEL.CONTROLLER = args.pyrobot_controller_spec
     task_config.SIMULATOR.NOISE_MODEL.NOISE_MULTIPLIER = args.pyrobot_noise_multiplier
@@ -288,7 +298,8 @@ def get_runid_and_logfolder(args, task_config):
     active_corruptions_1 = f"pc={args.pyrobot_controller_spec}" \
                            f"_pr={args.pyrobot_robot_spec}" \
                            f"_pnm={args.pyrobot_noise_multiplier}" \
-                           f"__habitatrgbnoise={args.habitat_rgb_noise_intensity}"
+                           f"__habitatrgbnoise={args.habitat_rgb_noise_intensity}" \
+                           f"_depthnoise={args.depth_noise_multiplier}"
 
     active_corruptions_2 = "_"
     if args.visual_corruption and args.visual_severity != 0:
