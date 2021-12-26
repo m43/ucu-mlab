@@ -131,7 +131,7 @@ python -u -m torch.distributed.launch
 #  --cur-time 20211214_222538319058
 
 
-export PYTHONPATH=/scratch/izar/rajic/vo:$PYTHONPATH && pointnav_vo/run.py --task-type rl --noise 1 --exp-config configs/rl/ddppo_pointnav.yaml --run-type eval --n-gpu 2 --cur-time 20211214_222538319058
+export PYTHONPATH=/scratch/izar/rajic/vo:$PYTHONPATH && pointnav_vo/run.py --task-type rl --noise 1 --exp-config configs/rl/ddppo_pointnav.yaml --run-type eval --n-gpu 1 --cur-time 20211214_222538319058
 
 #to run on val_mini
 vim configs/rl/ddppo_pointnav.yaml
