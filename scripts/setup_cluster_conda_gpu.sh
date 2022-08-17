@@ -63,12 +63,12 @@ python -m pip install -r requirements.txt --prefix="$CONDA_PREFIX"
 # ----------------------------------------------------------------------------
 python -m pip install gdown --prefix="$CONDA_PREFIX"
 
-#gdown https://dl.fbaipublicfiles.com/habitat/data/datasets/pointnav/gibson/v2/pointnav_gibson_v2.zip
-#mkdir -p data/datasets/pointnav/gibson/v2
-#unzip pointnav_gibson_v2.zip -d data/datasets/pointnav/gibson/v2
-#rm pointnav_gibson_v2.zip
-#gdown https://drive.google.com/uc?id=15_vh9rZgNhk_B8RFWZqmcW5JRdNQKM2G --output data/datasets/pointnav/gibson/gibson_quality_ratings.csv
-#
+gdown https://dl.fbaipublicfiles.com/habitat/data/datasets/pointnav/gibson/v2/pointnav_gibson_v2.zip
+mkdir -p data/datasets/pointnav/gibson/v2
+unzip pointnav_gibson_v2.zip -d data/datasets/pointnav/gibson/v2
+rm pointnav_gibson_v2.zip
+gdown https://drive.google.com/uc?id=15_vh9rZgNhk_B8RFWZqmcW5JRdNQKM2G --output data/datasets/pointnav/gibson/gibson_quality_ratings.csv
+
 #NOCOLOR='\033[0m'
 #RED='\033[0;31m'
 #echo -e "\n${RED}NOTE:${NOCOLOR} use command 'ln -s <path to scene datasets> ${PWD}/data/scene_datasets' to link the simulation scenes.\n"
