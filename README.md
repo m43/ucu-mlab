@@ -2,7 +2,7 @@
 
 [Frano Rajic](https://m43.github.io/), [Donggyun Park](https://ch.linkedin.com/in/donggyunpark)
 
-[`Project Website`](https://m43.github.io/projects/embodied-ai-robustness/) | [`Paper`](https://www.youtube.com/watch?v=dQw4w9WgXcQ) | [`>> Code [UCU Mlab] <<`](https://github.com/m43/ucu-mlab) | [`Code [VO2021]`](https://github.com/m43/vo2021)
+[`Project Website`](https://m43.github.io/projects/embodied-ai-robustness/) | [`Paper`](https://www.youtube.com/watch?v=dQw4w9WgXcQ) | [**`>> Code [UCU Mlab] <<`**](https://github.com/m43/ucu-mlab) | [`Code [VO2021]`](https://github.com/m43/vo2021)
 
 This repository contains the evaluation code for reproducing the benchmark results for the UCU Mlab agent and the baselines. The codebase of the UCU Mlab agent is taken from [rpartsey/pointgoal-navigation](https://github.com/rpartsey/pointgoal-navigation) at the version that was submitted to the [Habitat Challenge 2021](https://aihabitat.org/challenge/2021/).
 
