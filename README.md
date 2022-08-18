@@ -53,13 +53,13 @@ tree -L 1 /home/frano/data/gibson/
 tree data/ -L 5
 data/
 # ├── datasets
-# │   └── pointnav
-# │       └── gibson
-# │           ├── gibson_quality_ratings.csv
-# │           └── v2
-# │               ├── train
-# │               ├── val
-# │               └── val_mini
+# │   └── pointnav
+# │       └── gibson
+# │           ├── gibson_quality_ratings.csv
+# │           └── v2
+# │               ├── train
+# │               ├── val
+# │               └── val_mini
 # └── scene_datasets -> /home/frano/data/
 ```
 
@@ -78,7 +78,7 @@ tree saved/
 
 ## Results reproduction
 
-Activate the created environemnt, and then follow the instructions for specific agents:
+Activate the created environment, and then follow the instructions for specific agents:
 ```bash
 # module purge
 # module load gcc/8.4.0-cuda cuda/10.1
@@ -92,7 +92,7 @@ To reproduce the Color Jitter visual corruption results on the validation subset
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.GPU.yaml --agent_name ruslan --dataset_split val --color_jitter
 ```
 
-This run configuraiton can be found in `slurm/sbatch_1/03.sh`. For other run configurations, consult the set of SLURM scripts in `slurm/sbatch_1`, `slurm/sbatch_2`, `slurm/sbatch_4`, and `slurm_10`. Alternatively, consult the `eval.sh` script to see how all the possible corruption settings can be run.
+This run configuration can be found in `slurm/sbatch_1/03.sh`. For other run configurations, consult the set of SLURM scripts in `slurm/sbatch_1`, `slurm/sbatch_2`, `slurm/sbatch_4`, and `slurm_10`. Alternatively, consult the `eval.sh` script to see how all the possible corruption settings can be run.
 
 ### Random agent
 
@@ -110,7 +110,7 @@ To reproduce the Color Jitter visual corruption results (row 16 of Table 1 of th
 python -u ddppo_agents.py --input-type rgbd --evaluation local --model-path saved/ddppo_pointnav_habitat2021_challenge_baseline_v1.pth --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.GPU.yaml --agent_name ddppo --dataset_split val --seed 72 --color_jitter
 ```
 
-This run configuraiton can be found in `slurm/sbatch_6/6-01.sh`. For other run configurations, consult the set of SLURM scripts in `slurm/sbatch_6` and `slurm/sbatch_10`.
+This run configuration can be found in `slurm/sbatch_6/6-01.sh`. For other run configurations, consult the set of SLURM scripts in `slurm/sbatch_6` and `slurm/sbatch_10`.
 
 ## Citing
 If you find our work useful, please consider citing:
