@@ -87,7 +87,7 @@ conda activate ruslan
 
 ### UCU Mlab agent
 
-To reproduce the Color Jitter visual corruption results on the validation subset (row 16 of Table 1 of the paper), run the following:
+To reproduce the Color Jitter visual corruption results on the validation subset (row 13 of Table 1 of the paper), run the following:
 ```bash
 python agent.py --agent-type PPOAgentV2 --input-type depth --evaluation local --ddppo-checkpoint-path saved/pointnav2021_gt_loc_depth_ckpt.345.pth --ddppo-config-path config_files/ddppo/ddppo_pointnav_2021.yaml --vo-config-path saved/config.yaml --vo-checkpoint-path saved/best_checkpoint_064e.pt --pth-gpu-id 0 --rotation-regularization-on --vertical-flip-on --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.GPU.yaml --agent_name ruslan --dataset_split val --color_jitter
 ```
@@ -96,7 +96,7 @@ This run configuration can be found in `slurm/sbatch_1/03.sh`. For other run con
 
 ### Random agent
 
-To reproduce the Color Jitter visual corruption results (row 16 of Table 1 of the paper), run the following:
+To reproduce the Color Jitter visual corruption results (row 13 of Table 1 of the paper), run the following:
 ```bash
 python random_agent.py --evaluation local --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.GPU.yaml --agent_name random_agent --dataset_split val --color_jitter
 ```
@@ -105,7 +105,7 @@ This run configuraiton can be found in `slurm/sbatch_3/3-01.sh`. For other run c
 
 ### DD-PPO agent
 
-To reproduce the Color Jitter visual corruption results (row 16 of Table 1 of the paper), run the following:
+To reproduce the Color Jitter visual corruption results (row 13 of Table 1 of the paper), run the following:
 ```bash
 python -u ddppo_agents.py --input-type rgbd --evaluation local --model-path saved/ddppo_pointnav_habitat2021_challenge_baseline_v1.pth --challenge_config_file config_files/challenge_pointnav2021.local.rgbd.GPU.yaml --agent_name ddppo --dataset_split val --seed 72 --color_jitter
 ```
